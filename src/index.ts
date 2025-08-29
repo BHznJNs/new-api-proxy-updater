@@ -73,7 +73,7 @@ export default {
 
     // 步骤 1: 检查所有必要的环境变量是否已设置
     if (!env.BASE_URL || !env.ADMIN_ID || !env.ADMIN_TOKEN || !env.CHANNEL_IDS) {
-      console.error("错误：一个或多个环境变量未设置 (BASE_URL, ADMIN_ID, ADMIN_TOKEN, CHANNEL_ID)。请在 Cloudflare dashboard 或使用 wrangler secret 设置它们。");
+      console.error("错误：一个或多个环境变量未设置 (BASE_URL, ADMIN_ID, ADMIN_TOKEN, CHANNEL_IDS)。请在 Cloudflare dashboard 或使用 wrangler secret 设置它们。");
       return; // 提前退出
     }
 
@@ -98,9 +98,10 @@ export default {
       const firstProxy = proxies[0];
       const [ ipPort, user ] = firstProxy;
       const [host, port] = ipPort.split(":");
+      const password = "1";
       // 使用 encodeURIComponent 对用户名进行 URL 编码，以处理特殊字符
       const encodedUser = encodeURIComponent(user);
-      const proxyUrl = `http://${encodedUser}:1@${host}:${port}`;
+      const proxyUrl = `http://${encodedUser}:${password}@${host}:${port}`;;
       console.log(`准备使用代理：${proxyUrl}`);
 
       // 步骤 5: 调用 New API 更新渠道代理
