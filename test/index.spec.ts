@@ -1,10 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { extractHongKongProxies } from '../src/index';
+import { fetchTopChinaProxies, fetchProxifly } from '../src/proxy-fetcher';
 
 describe('extractHongKongProxies', () => {
   it('should extract Hong Kong proxies', async () => {
-	const response = await fetch("https://raw.githubusercontent.com/TopChina/proxy-list/refs/heads/main/README.md");
-	const text = await response.text();
-	expect(extractHongKongProxies(text).length).toBeGreaterThan(0);
+	const proxies = await fetchTopChinaProxies();
+	expect(proxies.length).toBeGreaterThan(0);
+  });
+});
+
+describe('fetch-proxifly', () => {
+  it('should fetch proxifly proxy ips', async () => {
+	const proxies = await fetchProxifly();
+	expect(proxies.length).toBeGreaterThan(0);
   });
 });

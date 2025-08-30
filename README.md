@@ -14,3 +14,4 @@ The proxy source: https://github.com/TopChina/proxy-list/blob/main/README.md
 | `ADMIN_ID`    | The ID of your admin user account | `1` |
 | `ADMIN_TOKEN` | The access token of your admin user account | `123456`
 | `CHANNEL_IDS` | The id of channels that is needed to update proxy IP | `[1, 2, 3, 4]` |
+| `PROXY_SOURCE` |  | `"TopChina"`, `"proxifly/FreeProxyList"`, `"vakhov/fresh-proxy-list"` |

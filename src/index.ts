@@ -1,3 +1,5 @@
+import { fetchProxifly, fetchTopChinaProxies, fetchVakhov, Proxy } from "./proxy-fetcher";
+
 /**
  * 更新指定渠道的代理设置。
  * @param env - 包含 API URL 和凭证的环境变量。
@@ -39,32 +41,6 @@ async function updateChannelProxy(env: Env, proxyUrl: string): Promise<void> {
   }
 }
 
-export function extractHongKongProxies(markdownText: string): [string, string][] {
-  const proxies: [string, string][] = [];
-  const lines = markdownText.split('\n');
-  const ipPortRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/;
-
-  for (const line of lines) {
-    // 检查是否为表格数据行
-    if (line.startsWith('|') && !line.startsWith('|---')) {
-      // 分割列并去除首尾空格
-      const columns = line.split('|').map(col => col.trim()).filter(col => col);
-
-      if (columns.length >= 3) {
-        const ipPort = columns[0];
-        const country = columns[1];
-        const user = columns[2];
-
-        // 筛选香港地区且 IP:端口 格式正确的代理
-        if (country === "香港" && ipPortRegex.test(ipPort)) {
-          proxies.push([ ipPort, user ]);
-        }
-      }
-    }
-  }
-  return proxies;
-}
-
 // Cloudflare Worker 的主入口点
 export default {
   // `scheduled` 函数会在 Cron Trigger 触发时自动执行
@@ -78,16 +54,20 @@ export default {
     }
 
     try {
-      // 步骤 2: 从 GitHub 获取 Markdown 代理列表
-      const response = await fetch("https://raw.githubusercontent.com/TopChina/proxy-list/refs/heads/main/README.md");
-      if (!response.ok) {
-        throw new Error(`获取代理列表失败，状态码：${response.status}`);
+      let proxies: Proxy[];
+      switch (env.PROXY_SOURCE as string) {
+        case 'TopChina':
+          proxies = await fetchTopChinaProxies();
+          break;
+        case 'proxifly/FreeProxyList':
+          proxies = await fetchProxifly();
+          break;
+        case 'vakhov/fresh-proxy-list':
+          proxies = await fetchVakhov();
+          break;
+        default:
+          throw new Error(`未知的代理来源：${env.PROXY_SOURCE}`);
       }
-      const markdownText = await response.text();
-      console.log("成功获取代理列表 Markdown 文件。");
-
-      // 步骤 3: 解析 Markdown 并提取香港代理
-      const proxies = extractHongKongProxies(markdownText);
       if (proxies.length === 0) {
         console.log("在列表中未找到有效的香港代理。任务结束。");
         return;
@@ -96,14 +76,16 @@ export default {
 
       // 步骤 4: 选择第一个代理并构建代理 URL
       const firstProxy = proxies[0];
-      const [ ipPort, user ] = firstProxy;
-      const [host, port] = ipPort.split(":");
-      const password = "1";
-      // 使用 encodeURIComponent 对用户名进行 URL 编码，以处理特殊字符
-      const encodedUser = encodeURIComponent(user);
-      const proxyUrl = `http://${encodedUser}:${password}@${host}:${port}`;;
-      console.log(`准备使用代理：${proxyUrl}`);
+      const { ip, username, password } = firstProxy;
+      let proxyUrl;
+      if (username && password) {
+        const encodedUser = encodeURIComponent(username);
+        proxyUrl = `http://${encodedUser}:${password}@${ip}`;
+      } else {
+        proxyUrl = `http://${ip}`;
+      }
 
+      console.log(`准备使用代理：${proxyUrl}`);
       // 步骤 5: 调用 New API 更新渠道代理
       await updateChannelProxy(env, proxyUrl);
 
