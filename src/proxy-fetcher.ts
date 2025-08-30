@@ -65,10 +65,9 @@ export async function fetchVakhov(): Promise<Proxy[]> {
   if (!response.ok) {
     throw new Error(`获取代理列表失败，状态码：${response.status}`);
   }
-  const proxyRawList = await response.json<{ ip: string, port: string, http: number, country_code: string }[]>();
-  console.log("成功获取代理列表 JSON 文件。");
+  const proxyRawList = await response.json<{ ip: string, port: string, http: string, country_code: string }[]>();
   const result = proxyRawList
-    .filter(item => item.http === 1 && item.country_code === "HK")
+    .filter(item => item.http === "1" && item.country_code === "HK")
     .map(item => ({ ip: `${item.ip}:${item.port}` }));
   return result;
 }
