@@ -1,4 +1,5 @@
 export interface Proxy {
+  type: 'https' | 'socks5',
   ip: string;
   password?: string;
   username?: string;
@@ -24,7 +25,7 @@ function extractHongKongProxies(markdownText: string): Proxy[] {
 
         // 筛选香港地区且 IP:端口 格式正确的代理
         if (country === "香港" && ipPortRegex.test(ipPort)) {
-          proxies.push({ ip: ipPort, username: user, password: '1' });
+          proxies.push({ type: 'https', ip: ipPort, username: user, password: '1' });
         }
       }
     }
@@ -32,42 +33,68 @@ function extractHongKongProxies(markdownText: string): Proxy[] {
   return proxies;
 }
 
-export async function fetchTopChinaProxies(): Promise<Proxy[]> {
+export async function fetchTopChina(): Promise<Proxy[]> {
   const response = await fetch("https://raw.githubusercontent.com/TopChina/proxy-list/refs/heads/main/README.md");
   if (!response.ok) {
     throw new Error(`获取代理列表失败，状态码：${response.status}`);
   }
   const markdownText = await response.text();
   console.log("成功获取代理列表 Markdown 文件。");
-
-  // 步骤 3: 解析 Markdown 并提取香港代理
   const proxies = extractHongKongProxies(markdownText);
   return proxies;
 }
 
 // --- --- --- --- --- ---
 
-export async function fetchProxifly(): Promise<Proxy[]> {
-  const response = await fetch("https://raw.githubusercontent.com/proxifly/free-proxy-list/refs/heads/main/proxies/countries/HK/data.json");
+export async function fetchGitrecon1455(): Promise<Proxy[]> {
+  const response = await fetch("https://raw.githubusercontent.com/gitrecon1455/fresh-proxy-list/refs/heads/main/proxylist.json");
   if (!response.ok) {
     throw new Error(`获取代理列表失败，状态码：${response.status}`);
   }
-  const proxyRawList = await response.json<{ ip: string, port: string }[]>();
-  console.log("成功获取代理列表 JSON 文件。");
-  const result = proxyRawList.map(item => ({ ip: `${item.ip}:${item.port}` }));
+  const proxyRawList = await response.json<{ ip: string, port: string, country_code: string, ssl: string, socks5: string }[]>();
+  const result = proxyRawList
+    .filter(item => item.country_code === "HK" && (item.ssl === "1" || item.socks5 === "1"))
+    .map(item => {
+      if (item.ssl === "1") {
+        return { ip: `${item.ip}:${item.port}`, type: 'https' as const };
+      } else if (item.socks5 === "1") {
+        return { ip: `${item.ip}:${item.port}`, type: 'socks5' as const };
+      } else {
+        throw new Error("Unreachable code.");
+      }
+    });
   return result;
 }
 
-// --- --- --- --- --- ---
-
-export async function fetchVakhov(): Promise<Proxy[]> {
-  const response = await fetch("https://vakhov.github.io/fresh-proxy-list/proxylist.json");
+export async function fetchHideipme(): Promise<Proxy[]> {
+  const response = await fetch("https://raw.githubusercontent.com/zloi-user/hideip.me/refs/heads/master/https.txt");
   if (!response.ok) {
     throw new Error(`获取代理列表失败，状态码：${response.status}`);
   }
-  const proxyRawList = await response.json<{ ip: string, port: string, http: string, country_code: string }[]>();
+  const proxyRawList = await response.text();
   const result = proxyRawList
-    .filter(item => item.http === "1" && item.country_code === "HK")
-    .map(item => ({ ip: `${item.ip}:${item.port}` }));
+    .split('\n')
+    .map(line => {
+      const [ip, port, location] = line.trim().split(':');
+      return { ip, port, location };
+    })
+    .filter(item => item.location === "Hong Kong")
+    .map(item => ({ ip: `${item.ip}:${item.port}`, type: 'https' as const }));
+  return result;
+}
+
+export async function fetchElliottophellia(): Promise<Proxy[]> {
+  const response = await fetch("https://raw.githubusercontent.com/elliottophellia/proxylist/refs/heads/master/results/socks5/country/HK/socks5_HK_checked.txt");
+  if (!response.ok) {
+    throw new Error(`获取代理列表失败，状态码：${response.status}`);
+  }
+  const proxyRawList = await response.text();
+  const result = proxyRawList
+    .split('\n')
+    .map(line => {
+      const [ip, port] = line.trim().split(':');
+      return { ip, port };
+    })
+    .map(item => ({ ip: `${item.ip}:${item.port}`, type: 'socks5' as const }));
   return result;
 }

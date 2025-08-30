@@ -2,7 +2,11 @@
 
 A worker that can setup a cron job to periodically update the proxy IP for specific channels.
 
-The proxy source: https://github.com/TopChina/proxy-list/blob/main/README.md
+The proxy sources: 
+- https://github.com/TopChina/proxy-list/blob/main/README.md
+- https://github.com/gitrecon1455/fresh-proxy-list/
+- https://github.com/zloi-user/hideip.me
+- https://github.com/elliottophellia/proxylist/
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/BHznJNs/new-api-proxy-updater)
 
@@ -14,4 +18,3 @@ The proxy source: https://github.com/TopChina/proxy-list/blob/main/README.md
 | `ADMIN_ID`    | The ID of your admin user account | `1` |
 | `ADMIN_TOKEN` | The access token of your admin user account | `123456`
 | `CHANNEL_IDS` | The id of channels that is needed to update proxy IP | `[1, 2, 3, 4]` |
-| `PROXY_SOURCE` |  | `"TopChina"`, `"proxifly/FreeProxyList"`, `"vakhov/fresh-proxy-list"` |

@@ -1,4 +1,4 @@
-import { fetchProxifly, fetchTopChinaProxies, fetchVakhov, Proxy } from "./proxy-fetcher";
+import { fetchElliottophellia, fetchGitrecon1455, fetchHideipme, fetchTopChina, Proxy } from "./proxy-fetcher";
 
 /**
  * 更新指定渠道的代理设置。
@@ -41,13 +41,10 @@ async function updateChannelProxy(env: Env, proxyUrl: string): Promise<void> {
   }
 }
 
-// Cloudflare Worker 的主入口点
 export default {
-  // `scheduled` 函数会在 Cron Trigger 触发时自动执行
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log(`Cron Trigger 触发！开始执行任务：${event.cron}`);
 
-    // 步骤 1: 检查所有必要的环境变量是否已设置
     if (!env.BASE_URL || !env.ADMIN_ID || !env.ADMIN_TOKEN || !env.CHANNEL_IDS) {
       console.error("错误：一个或多个环境变量未设置 (BASE_URL, ADMIN_ID, ADMIN_TOKEN, CHANNEL_IDS)。请在 Cloudflare dashboard 或使用 wrangler secret 设置它们。");
       return; // 提前退出
@@ -55,18 +52,22 @@ export default {
 
     try {
       let proxies: Proxy[];
+      console.log("代理 IP 来源：", env.PROXY_SOURCE);
       switch (env.PROXY_SOURCE as string) {
-        case 'TopChina':
-          proxies = await fetchTopChinaProxies();
+        case 'TopChina/proxy-list':
+          proxies = await fetchTopChina();
           break;
-        case 'proxifly/FreeProxyList':
-          proxies = await fetchProxifly();
+        case 'gitrecon1455/fresh-proxy-list':
+          proxies = await fetchGitrecon1455();
           break;
-        case 'vakhov/fresh-proxy-list':
-          proxies = await fetchVakhov();
+        case 'zloi-user/hideip.me':
+          proxies = await fetchHideipme();
+          break;
+        case 'elliottophellia/proxylist':
+          proxies = await fetchElliottophellia();
           break;
         default:
-          throw new Error(`未知的代理来源：${env.PROXY_SOURCE}`);
+          proxies = await fetchTopChina();
       }
       if (proxies.length === 0) {
         console.log("在列表中未找到有效的香港代理。任务结束。");
@@ -74,23 +75,20 @@ export default {
       }
       console.log(`找到了 ${proxies.length} 个香港代理。`);
 
-      // 步骤 4: 选择第一个代理并构建代理 URL
       const firstProxy = proxies[0];
-      const { ip, username, password } = firstProxy;
+      const { type, ip, username, password } = firstProxy;
+      const protocol = {"https": "http", "socks5": "socks5"}[type];
       let proxyUrl;
       if (username && password) {
         const encodedUser = encodeURIComponent(username);
-        proxyUrl = `http://${encodedUser}:${password}@${ip}`;
+        proxyUrl = `${protocol}://${encodedUser}:${password}@${ip}`;
       } else {
-        proxyUrl = `http://${ip}`;
+        proxyUrl = `${protocol}://${ip}`;
       }
 
       console.log(`准备使用代理：${proxyUrl}`);
-      // 步骤 5: 调用 New API 更新渠道代理
       await updateChannelProxy(env, proxyUrl);
-
     } catch (error) {
-      // 捕获并记录任何在执行过程中发生的错误
       console.error("任务执行失败：", error instanceof Error ? error.message : String(error));
     }
   },

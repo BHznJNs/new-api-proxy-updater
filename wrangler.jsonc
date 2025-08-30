@@ -11,7 +11,11 @@
 		"ADMIN_ID": "1",
 		"ADMIN_TOKEN": "",
 		"CHANNEL_IDS": "[1, 2, 3, 4]",
-		"PROXY_SOURCE": "TopChina" // "TopChina", "proxifly/FreeProxyList", "vakhov/fresh-proxy-list"
+		// "TopChina/proxy-list",
+		// "gitrecon1455/fresh-proxy-list"
+		// "zloi-user/hideip.me"
+		// "elliottophellia/proxylist"
+		"PROXY_SOURCE": "TopChina/proxy-list"
 	},
 	"triggers": {
 		"crons": ["*/20 * * * *"]
